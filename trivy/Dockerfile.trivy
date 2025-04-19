@@ -1,0 +1,8 @@
+FROM aquasec/trivy:latest
+
+# Set working directory
+WORKDIR /app
+
+# Command to scan an image
+CMD ["trivy", "image", "your-docker-image-name"]
+
