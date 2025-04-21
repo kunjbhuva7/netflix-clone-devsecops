@@ -17,6 +17,23 @@ services:
     networks:
       - app-network
 
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-container
+    ports:
+      - "8080:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home  # Persistent data volume
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker socket access for Jenkins
+    networks:
+      - app-network
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false  # Disable setup wizard for Jenkins
+
+volumes:
+  jenkins_home:
+    driver: local  # Persistent storage for Jenkins data
+
 networks:
   app-network:
     driver: bridge
