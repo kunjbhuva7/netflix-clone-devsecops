@@ -20,7 +20,8 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh '''
-		        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+		        echo "Username: $DOCKER_USERNAME"
+               		echo "Password length: ${#DOCKER_PASSWORD}"
 		    '''
                 }
             }
