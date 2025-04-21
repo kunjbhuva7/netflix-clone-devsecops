@@ -19,8 +19,10 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u kunj22 --password-Bhuva@220202"
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh '''
+		        echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+		    '''
                 }
             }
         }
@@ -75,7 +77,7 @@ pipeline {
             steps {
                 script {
                     catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                        sh 'mvn sonar:sonar -Dsonar.projectKey=netflix-clone -Dsonar.host.url=http://localhost:9000 -Dsonar.login=squ_0b203869845bb3e14cf43003b0f9ea17626c8f86 || true'
+                        sh 'mvn sonar:sonar -Dsonar.projectKey=netflix-clone -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=squ_0b203869845bb3e14cf43003b0f9ea17626c8f86 || true'
                     }
                 }
             }
@@ -98,8 +100,10 @@ pipeline {
 
     post {
         always {
-            sh "docker image prune -f || true"
-            sh "docker compose down || true"
+            node('') {
+                sh "docker image prune -f || true"
+                sh "docker compose down || true"
+            }
         }
         failure {
             echo 'Pipeline failed. Check logs for details.'
