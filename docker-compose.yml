@@ -4,6 +4,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "8081:80"
     networks:
@@ -12,6 +13,7 @@ services:
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     networks:
@@ -22,19 +24,58 @@ services:
     container_name: jenkins-container
     ports:
       - "8080:8080"
+      - "50000:50000"
     volumes:
-      - jenkins_home:/var/jenkins_home  # Persistent data volume
-      - /var/run/docker.sock:/var/run/docker.sock  # Docker socket access for Jenkins
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - app-network
     environment:
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false  # Disable setup wizard for Jenkins
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9000:9000"
+    networks:
+      - app-network
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    networks:
+      - app-network
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
 
 volumes:
   jenkins_home:
-    driver: local  # Persistent storage for Jenkins data
+    driver: local
+  sonarqube_data:
+    driver: local
+  sonarqube_logs:
+    driver: local
+  sonarqube_extensions:
+    driver: local
+  postgresql:
+    driver: local
+  postgresql_data:
+    driver: local
 
 networks:
   app-network:
     driver: bridge
-

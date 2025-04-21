@@ -7,7 +7,6 @@ pipeline {
         IMAGE_NAME_BACKEND = "netflix-clone-devsecops-backend"
         FRONTEND_PATH = "./frontend"
         BACKEND_PATH = "./backend"
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
 
     stages {
@@ -21,7 +20,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                     sh '''
-		        echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+		        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
 		    '''
                 }
             }
