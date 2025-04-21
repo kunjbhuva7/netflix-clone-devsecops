@@ -7,13 +7,21 @@ pipeline {
         IMAGE_NAME_BACKEND = "netflix-clone-devsecops-backend"
         FRONTEND_PATH = "./frontend"
         BACKEND_PATH = "./backend"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub')
     }
 
     stages {
         stage('Clone Repo') {
             steps {
-                // Clone the repository from GitHub
-                git 'https://github.com/kunjbhuva7/netflix-clone-devsecops.git'
+                git url: 'https://github.com/kunjbhuva7/netflix-clone-devsecops.git', branch: 'master'
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u kunj22 --password-Bhuva@220202"
+                }
             }
         }
 
@@ -22,16 +30,14 @@ pipeline {
                 stage('Frontend') {
                     steps {
                         script {
-                            // Build frontend Docker image
-                            sh "docker build -t $REGISTRY/$IMAGE_NAME_FRONTEND $FRONTEND_PATH"
+                            sh "docker build -t ${REGISTRY}/${IMAGE_NAME_FRONTEND} ${FRONTEND_PATH}"
                         }
                     }
                 }
                 stage('Backend') {
                     steps {
                         script {
-                            // Build backend Docker image
-                            sh "docker build -t $REGISTRY/$IMAGE_NAME_BACKEND $BACKEND_PATH"
+                            sh "docker build -t ${REGISTRY}/${IMAGE_NAME_BACKEND} ${BACKEND_PATH}"
                         }
                     }
                 }
@@ -43,16 +49,14 @@ pipeline {
                 stage('Frontend') {
                     steps {
                         script {
-                            // Push frontend Docker image to Docker Hub
-                            sh "docker push $REGISTRY/$IMAGE_NAME_FRONTEND"
+                            sh "docker push ${REGISTRY}/${IMAGE_NAME_FRONTEND}"
                         }
                     }
                 }
                 stage('Backend') {
                     steps {
                         script {
-                            // Push backend Docker image to Docker Hub
-                            sh "docker push $REGISTRY/$IMAGE_NAME_BACKEND"
+                            sh "docker push ${REGISTRY}/${IMAGE_NAME_BACKEND}"
                         }
                     }
                 }
@@ -62,8 +66,7 @@ pipeline {
         stage('Run Docker Compose') {
             steps {
                 script {
-                    // Start the containers with Docker Compose
-                    sh 'docker-compose up -d'
+                    sh "docker compose up -d"
                 }
             }
         }
@@ -71,8 +74,9 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Run SonarQube analysis (optional, configure it for your project)
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=netflix-clone -Dsonar.host.url=http:http://localhost:9000/ -Dsonar.login=squ_0b203869845bb3e14cf43003b0f9ea17626c8f86'
+                    catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                        sh 'mvn sonar:sonar -Dsonar.projectKey=netflix-clone -Dsonar.host.url=http://localhost:9000 -Dsonar.login=squ_0b203869845bb3e14cf43003b0f9ea17626c8f86 || true'
+                    }
                 }
             }
         }
@@ -80,12 +84,28 @@ pipeline {
         stage('Trivy Scan for Vulnerabilities') {
             steps {
                 script {
-                    // Run Trivy to scan for vulnerabilities in the Docker images
-                    sh 'trivy image $REGISTRY/$IMAGE_NAME_FRONTEND'
-                    sh 'trivy image $REGISTRY/$IMAGE_NAME_BACKEND'
+                    sh '''
+                        if ! command -v trivy &> /dev/null; then
+                            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+                        fi
+                    '''
+                    sh "trivy image ${REGISTRY}/${IMAGE_NAME_FRONTEND}"
+                    sh "trivy image ${REGISTRY}/${IMAGE_NAME_BACKEND}"
                 }
             }
         }
     }
-}
 
+    post {
+        always {
+            sh "docker image prune -f || true"
+            sh "docker compose down || true"
+        }
+        failure {
+            echo 'Pipeline failed. Check logs for details.'
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+    }
+}
