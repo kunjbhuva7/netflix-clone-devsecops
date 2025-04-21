@@ -32,14 +32,14 @@ pipeline {
                 stage('Frontend') {
                     steps {
                         script {
-                            sh 'sudo docker build -t docker.io/kunj22/netflix-clone-devsecops-frontend ./frontend'
+                            sh 'docker build -t docker.io/kunj22/netflix-clone-devsecops-frontend ./frontend'
                         }
                     }
                 }
                 stage('Backend') {
                     steps {
                         script {
-                            sh 'sudo docker build -t docker.io/kunj22/netflix-clone-devsecops-backend ./backend'
+                            sh 'docker build -t docker.io/kunj22/netflix-clone-devsecops-backend ./backend'
                         }
                     }
                 }
@@ -51,14 +51,14 @@ pipeline {
                 stage('Frontend') {
                     steps {
                         script {
-                            sh 'sudo docker push docker.io/kunj22/netflix-clone-devsecops-frontend'
+                            sh 'docker push docker.io/kunj22/netflix-clone-devsecops-frontend'
                         }
                     }
                 }
                 stage('Backend') {
                     steps {
                         script {
-                            sh 'sudo docker push docker.io/kunj22/netflix-clone-devsecops-backend'
+                            sh 'docker push docker.io/kunj22/netflix-clone-devsecops-backend'
                         }
                     }
                 }
@@ -68,7 +68,7 @@ pipeline {
         stage('Run Docker Compose') {
             steps {
                 script {
-                    sh 'sudo docker compose -f docker compose.yml up -d'
+                    sh 'docker compose -f docker compose.yml up -d'
                 }
             }
         }
